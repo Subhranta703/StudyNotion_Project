@@ -21,7 +21,7 @@ const PORT = process.env.PORT || 8000;
 dotenv.config();
 
 // Connecting to database
-database.connect("mongodb+srv://sthita_joshi:4Ota7BKM24dwo6FU@cluster0.ukrjohb.mongodb.net/");
+database.connect();
  
 // Middlewares
 app.use(express.json());
