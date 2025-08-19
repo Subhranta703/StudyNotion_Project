@@ -30,15 +30,15 @@ export default function CourseInformationForm() {
   const { token } = useSelector((state) => state.auth)
   const { course, editCourse } = useSelector((state) => state.course)
   const [loading, setLoading] = useState(false)
-  const courseCategories = [
-    { _id: "1", name: "Web Development" },
-    { _id: "2", name: "Data Science" },
-    { _id: "3", name: "Machine Learning" },
-    { _id: "4", name: "Cloud Computing" },
-    { _id: "5", name: "Cyber Security" },
-    { _id: "6", name: "Mobile Development" },
-    { _id: "7", name: "UI/UX Design" },
-  ]
+
+ const courseCategories = [
+  { id: "1", name: "Web Development" },
+  { id: "2", name: "Data Science" },
+  { id: "3", name: "AI/ML" },
+  { id: "4", name: "Design" },
+  { id: "5", name: "Marketing" },
+]
+
 
   useEffect(() => {
     // const getCategories = async () => {
@@ -92,32 +92,31 @@ const onSubmit = async (values) => {
   try {
     const formData = new FormData();
 
-    // required text fields
-    formData.append("courseName", values.courseName);
-    formData.append("courseDescription", values.courseDescription);
-    formData.append("whatYouWillLearn", values.whatYouWillLearn);
-    formData.append("price", values.price);
+    // ✅ Map frontend names -> backend names
+    formData.append("courseName", values.courseTitle);
+    formData.append("courseDescription", values.courseShortDesc);
+    formData.append("price", values.coursePrice);
+    formData.append("whatYouWillLearn", values.courseBenefits);
+    formData.append("category", values.courseCategory);
+    formData.append("status", COURSE_STATUS.DRAFT); // or "Published"
 
-    // arrays must be stringified (backend does JSON.parse)
-    formData.append("tag", JSON.stringify(values.tag || []));
-    formData.append("instructions", JSON.stringify(values.instructions || []));
+    // ✅ Arrays (stringify so backend can JSON.parse them)
+    formData.append("tag", JSON.stringify(values.courseTags || []));
+    formData.append("instructions", JSON.stringify(values.courseRequirements || []));
 
-    // category
-    formData.append("category", values.category);
-
-    // optional status
-    formData.append("status", values.status || "Draft");
-
-    // thumbnail file (MUST match backend: thumbnailImage)
-    if (values.thumbnailImage && values.thumbnailImage[0]) {
-      formData.append("thumbnailImage", values.thumbnailImage[0]);
+    // ✅ Thumbnail (backend expects thumbnailImage)
+    if (values.courseImage && values.courseImage[0]) {
+      formData.append("thumbnailImage", values.courseImage[0]);
     }
 
-    const response = await fetch("http://localhost:8000/api/v1/course/createCourse", {
-      method: "POST",
-      body: formData,
-      credentials: "include", // 🔑 so req.user is available
-    });
+    const response = await fetch(
+      "http://localhost:8000/api/v1/course/createCourse",
+      {
+        method: "POST",
+        body: formData,
+        credentials: "include", // so req.user is available
+      }
+    );
 
     const result = await response.json();
 
@@ -129,11 +128,14 @@ const onSubmit = async (values) => {
 
     console.log("✅ Course Created:", result);
     alert("Course created successfully!");
+    dispatch(setCourse(result.data)); // save course in redux if needed
+    dispatch(setStep(2)); // move to next step
   } catch (error) {
     console.error("❌ Error submitting course:", error);
     alert("Something went wrong");
   }
 };
+
 
 
 
@@ -257,23 +259,21 @@ const onSubmit = async (values) => {
     Course Category <sup className="text-pink-200">*</sup>
   </label>
   <select
-  {...register("courseCategory", { required: true })}
-  defaultValue=""
-  id="courseCategory"
-  className="form-style w-full"
->
-  <option value="" disabled>
-    -- Select a category --
-  </option>
-  {!loading &&
-    courseCategories?.map((category) => (
-  <option key={category._id} value={category._id}>
-    {category.name}
-  </option>
-))}
-
-
-</select>
+    {...register("courseCategory", { required: true })}
+    defaultValue=""
+    id="courseCategory"
+    className="form-style w-full"
+  >
+    <option value="" disabled>
+      -- Select a category --
+    </option>
+    {!loading &&
+      courseCategories.map((category) => (
+        <option key={category.id} value={category.name}>
+          {category.name}
+        </option>
+      ))}
+  </select>
 
   {errors.courseCategory && (
     <span className="ml-2 text-xs tracking-wide text-pink-200">
@@ -281,6 +281,7 @@ const onSubmit = async (values) => {
     </span>
   )}
 </div>
+
 
 
 
